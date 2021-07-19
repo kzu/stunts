@@ -9,7 +9,7 @@
   <ItemGroup Label="Core">
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="1.0.0" />
     <PackageVersion Include="ThisAssembly" Version="1.0.8" />
-    <PackageVersion Include="NuGetizer" Version="0.6.2" />
+    <PackageVersion Include="NuGetizer" Version="0.7.2" />
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.2" />
   </ItemGroup>

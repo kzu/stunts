@@ -12,7 +12,7 @@
     <TypeNameFormatterInternal>true</TypeNameFormatterInternal>
     <PackageProjectUrl>https://clarius.org/avatar</PackageProjectUrl>
 
-    <DogfoodingVersion>0.6.2</DogfoodingVersion>
+    <DogfoodingVersion>0.7.2</DogfoodingVersion>
   </PropertyGroup>
 
   <!-- We need this in .props so it kicks-in before all the common.props defaulting -->

@@ -22,7 +22,7 @@ service.AddBehavior(...);
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" Visible="false" Pack="false" />
-    <PackageReference Include="NuGetizer" Version="0.6.2" Visible="false" />
+    <PackageReference Include="NuGetizer" Version="0.7.2" Visible="false" />
     <PackageReference Update="NuGetizer" Version="$(DogfoodingVersion)" Visible="false" Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\nugetizer\bin\')" />
   </ItemGroup>
   <ItemGroup>
