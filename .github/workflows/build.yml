@@ -6,6 +6,11 @@ on:
   workflow_dispatch:
   push:
     branches: [ main, dev, 'feature/*', 'rel/*' ]
+    paths-ignore:
+      - changelog.md
+      - code-of-conduct.md
+      - security.md
+      - support.md
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -47,20 +52,14 @@ jobs:
           fetch-depth: 0
 
       - name: 🙏 build
-        run: dotnet build -m:1 -bl:build.binlog -p:VersionLabel="$GITHUB_REF.$GITHUB_RUN_NUMBER" -p:RepositoryBranch=${GITHUB_REF#refs/*/}
+        run: dotnet build -m:1 -p:VersionLabel="$GITHUB_REF.$GITHUB_RUN_NUMBER"
 
       - name: 🧪 test
-        run: dotnet test --no-build -m:1 --blame-hang --blame-hang-timeout 5m -d $GITHUB_WORKSPACE/logs/${{ matrix.os }}.txt -r $GITHUB_WORKSPACE/logs
+        run: dotnet test --no-build -m:1 --blame-hang --blame-hang-timeout 5m
 
       - name: 📦 pack
-        run: dotnet pack -m:1 -bl:pack.binlog -p:VersionLabel="$GITHUB_REF.$GITHUB_RUN_NUMBER" -p:RepositoryBranch=${GITHUB_REF#refs/*/}
+        run: dotnet pack -m:1 -p:VersionLabel="$GITHUB_REF.$GITHUB_RUN_NUMBER"
 
-      - name: 🔼 packages
-        uses: actions/upload-artifact@v2
-        with:
-          name: bin
-          path: bin/*.nupkg
-      
       # Only push CI package to sleet feed if building on ubuntu (fastest)
       - name: 🚀 sleet
         env:
@@ -69,80 +68,3 @@ jobs:
         run: |
           dotnet tool install -g --version 4.0.18 sleet 
           sleet push bin --config none -f --verbose -p "SLEET_FEED_CONTAINER=nuget" -p "SLEET_FEED_CONNECTIONSTRING=${{ secrets.SLEET_CONNECTION }}" -p "SLEET_FEED_TYPE=azure" || echo "No packages found"
-
-  acceptance:
-    name: acceptance-${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    needs: build
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-    steps:
-      - name: 🤘 checkout
-        uses: actions/checkout@v2
-
-      - name: 🔽 packages
-        uses: actions/download-artifact@v2
-        with:
-          name: bin
-          path: bin
-
-      - name: 🧪 test
-        run: dotnet test -p:VersionLabel="$GITHUB_REF.$GITHUB_RUN_NUMBER"
-        working-directory: src/Acceptance
-
-  preview:
-    defaults:
-      run:
-        shell: pwsh
-    needs: dotnet-format
-    runs-on: windows-latest
-
-    steps:
-      - name: 🤘 checkout
-        uses: actions/checkout@v2
-
-      # > VS Preview
-      - name: 🔽 dotnet-vs
-        run: dotnet tool update -g dotnet-vs
-      - name: 🔽 vs preview
-        run: vs install preview --quiet +Microsoft.VisualStudio.Component.ManagedDesktop.Core +Microsoft.NetCore.Component.DevelopmentTools
-      - name: ≥ msbuild
-        run: echo "$(vs where preview --prop=InstallationPath)\MSBuild\Current\Bin" >> $env:GITHUB_PATH
-      # < VS Preview
-
-      - name: ⚙ curl
-        run: |
-          iwr -useb get.scoop.sh | iex
-          scoop install curl
-      - name: 🔍 status for PR
-        if: ${{ github.event.pull_request.head.sha }}
-        run: echo "STATUS_SHA=${{ github.event.pull_request.head.sha }}" >> $env:GITHUB_ENV
-
-      - name: 🔍 status for branch
-        if: ${{ !github.event.pull_request.head.sha }}
-        run: echo "STATUS_SHA=$($env:GITHUB_SHA)" >> $env:GITHUB_ENV
-
-      - name: ⌛ wait on build
-        env:
-          CHECK: build-windows-latest
-          SHA: ${{ env.STATUS_SHA }}
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./.github/workflows/wait-status.ps1
-
-      - name: ⌛ wait on acceptance
-        env:
-          CHECK: acceptance-windows-latest
-          SHA: ${{ env.STATUS_SHA }}
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./.github/workflows/wait-status.ps1
-
-      - name: 🔽 packages
-        uses: actions/download-artifact@v2
-        with:
-          name: bin
-          path: bin
-
-      - name: 🧪 test
-        run: msbuild -r -t:build,test -p:TargetFramework=net472 -p:VersionLabel="$($env:GITHUB_REF).$($env:GITHUB_RUN_NUMBER)"
-        working-directory: src/Acceptance
